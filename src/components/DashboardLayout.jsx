@@ -32,6 +32,10 @@ function DashboardLayout({ children }) {
             ➕ Create Repository
           </NavLink>
 
+          <NavLink to="/search" className={navClass}>
+            🔍 Search
+          </NavLink>
+
           <NavLink to="/profile" className={navClass}>
             👤 Profile
           </NavLink>
