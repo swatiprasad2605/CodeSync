@@ -1,6 +1,36 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 function Login() {
+  const navigate = useNavigate();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    setError("");
+
+    if (!email || !password) {
+      setError("Please enter your email and password.");
+      return;
+    }
+
+    // Temporary frontend-only login
+    const demoUser = {
+      id: 1,
+      name: "Demo User",
+      email: email,
+      department: "CSE",
+    };
+
+    localStorage.setItem("user", JSON.stringify(demoUser));
+    localStorage.setItem("token", "demo-token");
+
+    navigate("/dashboard");
+  };
+
   return (
     <div className="auth-page">
       <div className="auth-card">
@@ -8,15 +38,33 @@ function Login() {
 
         <p>Login to your CodeSync account</p>
 
-        <form>
+        {error && <div className="error-message">{error}</div>}
+
+        <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>Email</label>
-            <input type="email" placeholder="Enter your email" />
+            <label htmlFor="email">Email</label>
+
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="Enter your email"
+              required
+            />
           </div>
 
           <div className="form-group">
-            <label>Password</label>
-            <input type="password" placeholder="Enter your password" />
+            <label htmlFor="password">Password</label>
+
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="Enter your password"
+              required
+            />
           </div>
 
           <button type="submit" className="primary-button full-width">
