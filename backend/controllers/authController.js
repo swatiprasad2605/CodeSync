@@ -1,11 +1,11 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-
-// Temporary in-memory users.
-// We will replace this with MySQL after the database is ready.
-const users = [];
+const oracledb = require("oracledb");
+const getConnection = require("../database/connection");
 
 const register = async (req, res) => {
+  let connection;
+
   try {
     const { name, email, password, department } = req.body;
 
@@ -15,47 +15,56 @@ const register = async (req, res) => {
       });
     }
 
-    const existingUser = users.find(
-      (user) => user.email === email
-    );
-
-    if (existingUser) {
-      return res.status(409).json({
-        message: "User already exists"
-      });
-    }
+    connection = await getConnection();
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = {
-      id: users.length + 1,
-      name,
-      email,
-      password: hashedPassword,
-      department: department || null
-    };
+    const result = await connection.execute(
+      `SELECT NVL(MAX(UserID), 0) + 1 AS NEXT_ID FROM USERS`
+    );
 
-    users.push(user);
+    const userId = result.rows[0].NEXT_ID;
+
+    await connection.execute(
+      `INSERT INTO USERS
+       (UserID, Name, Email, Password, Department)
+       VALUES
+       (:userId, :name, :email, :password, :department)`,
+      {
+        userId,
+        name,
+        email,
+        password: hashedPassword,
+        department: department || null
+      },
+      { autoCommit: true }
+    );
 
     res.status(201).json({
       message: "Registration successful",
       user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        department: user.department
+        id: userId,
+        name,
+        email,
+        department: department || null
       }
     });
   } catch (error) {
-    console.error(error);
+    console.error("Registration error:", error);
 
     res.status(500).json({
-      message: "Server error"
+      message: "Registration failed"
     });
+  } finally {
+    if (connection) {
+      await connection.close();
+    }
   }
 };
 
 const login = async (req, res) => {
+  let connection;
+
   try {
     const { email, password } = req.body;
 
@@ -65,19 +74,32 @@ const login = async (req, res) => {
       });
     }
 
-    const user = users.find(
-      (user) => user.email === email
+    connection = await getConnection();
+
+    const result = await connection.execute(
+      `SELECT
+         UserID,
+         Name,
+         Email,
+         Password,
+         Department
+       FROM USERS
+       WHERE Email = :email`,
+      { email },
+      { outFormat: oracledb.OUT_FORMAT_OBJECT }
     );
 
-    if (!user) {
+    if (result.rows.length === 0) {
       return res.status(401).json({
         message: "Invalid email or password"
       });
     }
 
+    const user = result.rows[0];
+
     const passwordMatch = await bcrypt.compare(
       password,
-      user.password
+      user.PASSWORD
     );
 
     if (!passwordMatch) {
@@ -88,8 +110,8 @@ const login = async (req, res) => {
 
     const token = jwt.sign(
       {
-        id: user.id,
-        email: user.email
+        id: user.USERID,
+        email: user.EMAIL
       },
       process.env.JWT_SECRET || "codesync-development-secret",
       {
@@ -101,18 +123,22 @@ const login = async (req, res) => {
       message: "Login successful",
       token,
       user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        department: user.department
+        id: user.USERID,
+        name: user.NAME,
+        email: user.EMAIL,
+        department: user.DEPARTMENT
       }
     });
   } catch (error) {
-    console.error(error);
+    console.error("Login error:", error);
 
     res.status(500).json({
-      message: "Server error"
+      message: "Login failed"
     });
+  } finally {
+    if (connection) {
+      await connection.close();
+    }
   }
 };
 
