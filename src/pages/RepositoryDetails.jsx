@@ -3,22 +3,70 @@ import { Link, useParams } from "react-router-dom";
 import DashboardLayout from "../components/DashboardLayout";
 import FileUpload from "../components/FileUpload";
 
-function RepositoryDetails() {
-  const { id } = useParams();
-
-  const [files, setFiles] = useState([
-    { name: "README.md", size: "2 KB", type: "file" },
-    { name: "src", size: "Folder", type: "folder" },
-    { name: "package.json", size: "1 KB", type: "file" },
-    { name: "index.js", size: "4 KB", type: "file" },
-  ]);
-
-  const repository = {
+const defaultRepositories = [
+  {
+    id: 1,
     name: "Student Management System",
     description: "A Java-based student management project.",
     language: "Java",
     visibility: "Private",
-  };
+  },
+  {
+    id: 2,
+    name: "Portfolio Website",
+    description: "Personal portfolio built with React.",
+    language: "JavaScript",
+    visibility: "Public",
+  },
+  {
+    id: 3,
+    name: "DBMS Mini Project",
+    description: "Database project for managing coding repositories.",
+    language: "SQL",
+    visibility: "Private",
+  },
+];
+
+const defaultFiles = [
+  { name: "README.md", size: "2 KB", type: "file" },
+  { name: "src", size: "Folder", type: "folder" },
+  { name: "package.json", size: "1 KB", type: "file" },
+  { name: "index.js", size: "4 KB", type: "file" },
+];
+
+function RepositoryDetails() {
+  const { id } = useParams();
+
+  const savedRepositories =
+    JSON.parse(localStorage.getItem("repositories")) || [];
+
+  const repositories = [...defaultRepositories, ...savedRepositories];
+
+  const repository = repositories.find(
+    (repo) => String(repo.id) === String(id),
+  );
+
+  const [files, setFiles] = useState(() => {
+    const savedFiles =
+      JSON.parse(localStorage.getItem(`repositoryFiles_${id}`)) || [];
+
+    return savedFiles.length > 0 ? savedFiles : defaultFiles;
+  });
+
+  if (!repository) {
+    return (
+      <DashboardLayout>
+        <div className="repo-details-header">
+          <p className="eyebrow">REPOSITORY</p>
+          <h1>Repository not found</h1>
+
+          <Link to="/repositories" className="primary-button">
+            Back to Repositories
+          </Link>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   const handleFileUpload = (file) => {
     const newFile = {
@@ -27,7 +75,16 @@ function RepositoryDetails() {
       type: "file",
     };
 
-    setFiles((previous) => [...previous, newFile]);
+    setFiles((previous) => {
+      const updatedFiles = [...previous, newFile];
+
+      localStorage.setItem(
+        `repositoryFiles_${id}`,
+        JSON.stringify(updatedFiles),
+      );
+
+      return updatedFiles;
+    });
   };
 
   return (
@@ -35,7 +92,9 @@ function RepositoryDetails() {
       <div className="repo-details-header">
         <div>
           <p className="eyebrow">REPOSITORY</p>
+
           <h1>{repository.name}</h1>
+
           <p>{repository.description}</p>
         </div>
       </div>

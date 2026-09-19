@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import DashboardLayout from "../components/DashboardLayout";
 
-const repositories = [
+const defaultRepositories = [
   {
     id: 1,
     name: "Student Management System",
@@ -29,6 +30,24 @@ const repositories = [
 ];
 
 function Repositories() {
+  const [repositories] = useState(() => {
+    const saved = JSON.parse(localStorage.getItem("repositories")) || [];
+
+    return [...defaultRepositories, ...saved];
+  });
+
+  const getFileCount = (repository) => {
+    const savedFiles =
+      JSON.parse(localStorage.getItem(`repositoryFiles_${repository.id}`)) ||
+      [];
+
+    if (savedFiles.length > 0) {
+      return savedFiles.length;
+    }
+
+    return repository.files || 0;
+  };
+
   return (
     <DashboardLayout>
       <div className="repositories-header">
@@ -59,7 +78,8 @@ function Repositories() {
             <p className="repository-description">{repository.description}</p>
 
             <div className="repository-meta">
-              <span>📄 {repository.files} files</span>
+              <span>📄 {getFileCount(repository)} files</span>
+
               <span>🕒 {repository.updated}</span>
             </div>
 

@@ -1,7 +1,8 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import DashboardLayout from "../components/DashboardLayout";
 
-const repositories = [
+const defaultRepositories = [
   {
     id: 1,
     name: "Student Management System",
@@ -24,6 +25,11 @@ const repositories = [
 
 function Search() {
   const [query, setQuery] = useState("");
+
+  const savedRepositories =
+    JSON.parse(localStorage.getItem("repositories")) || [];
+
+  const repositories = [...defaultRepositories, ...savedRepositories];
 
   const results = repositories.filter((repo) =>
     `${repo.name} ${repo.description} ${repo.language}`
@@ -61,17 +67,19 @@ function Search() {
         )}
 
         {results.map((repo) => (
-          <div className="search-result-card" key={repo.id}>
+          <Link
+            to={`/repositories/${repo.id}`}
+            className="search-result-card"
+            key={repo.id}
+          >
             <div className="search-result-icon">📁</div>
 
             <div>
               <h2>{repo.name}</h2>
-
               <p>{repo.description}</p>
-
               <span>{repo.language}</span>
             </div>
-          </div>
+          </Link>
         ))}
 
         {query && results.length === 0 && (

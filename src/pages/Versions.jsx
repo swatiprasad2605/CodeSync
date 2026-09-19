@@ -1,10 +1,11 @@
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import DashboardLayout from "../components/DashboardLayout";
 
 function Versions() {
   const { id } = useParams();
 
-  const versions = [
+  const defaultVersions = [
     {
       version: "v1.0.0",
       message: "Initial project upload",
@@ -25,6 +26,39 @@ function Versions() {
     },
   ];
 
+  const [versions, setVersions] = useState(defaultVersions);
+  const [showForm, setShowForm] = useState(false);
+  const [message, setMessage] = useState("");
+
+  function createVersion(event) {
+    event.preventDefault();
+
+    if (message.trim() === "") {
+      return;
+    }
+
+    const newVersion = {
+      version: "v" + (versions.length + 1) + ".0.0",
+      message: message.trim(),
+      author: "Demo User",
+      date: "Just now",
+    };
+
+    setVersions([newVersion, ...versions]);
+    setMessage("");
+    setShowForm(false);
+  }
+
+  function viewVersion(version) {
+    alert(
+      version.version +
+        "\n\n" +
+        version.message +
+        "\n\nCreated by " +
+        version.author,
+    );
+  }
+
   return (
     <DashboardLayout>
       <div className="versions-header">
@@ -34,30 +68,75 @@ function Versions() {
           <p>Track changes made to this repository.</p>
         </div>
 
-        <Link to={`/repositories/${id}`} className="secondary-button">
-          ← Back to Repository
-        </Link>
+        <div className="version-actions">
+          <button
+            type="button"
+            className="primary-button"
+            onClick={function () {
+              setShowForm(!showForm);
+            }}
+          >
+            {showForm ? "Close" : "+ New Version"}
+          </button>
+
+          <Link to={"/repositories/" + id} className="secondary-button">
+            ← Back to Repository
+          </Link>
+        </div>
       </div>
 
-      <div className="versions-list">
-        {versions.map((version) => (
-          <div className="version-card" key={version.version}>
-            <div className="version-icon">🔀</div>
+      {showForm && (
+        <form className="version-form" onSubmit={createVersion}>
+          <div className="form-group">
+            <label htmlFor="version-message">Version Message</label>
 
-            <div className="version-content">
-              <div className="version-top">
-                <h2>{version.version}</h2>
-                <span>{version.date}</span>
+            <input
+              id="version-message"
+              type="text"
+              value={message}
+              onChange={function (event) {
+                setMessage(event.target.value);
+              }}
+              placeholder="e.g. Added login feature"
+              required
+            />
+          </div>
+
+          <button type="submit" className="primary-button">
+            Create Version
+          </button>
+        </form>
+      )}
+
+      <div className="versions-list">
+        {versions.map(function (version, index) {
+          return (
+            <div className="version-card" key={version.version + index}>
+              <div className="version-icon">🔀</div>
+
+              <div className="version-content">
+                <div className="version-top">
+                  <h2>{version.version}</h2>
+                  <span>{version.date}</span>
+                </div>
+
+                <p>{version.message}</p>
+
+                <small>Created by {version.author}</small>
               </div>
 
-              <p>{version.message}</p>
-
-              <small>Created by {version.author}</small>
+              <button
+                type="button"
+                className="version-button"
+                onClick={function () {
+                  viewVersion(version);
+                }}
+              >
+                View
+              </button>
             </div>
-
-            <button className="version-button">View</button>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </DashboardLayout>
   );
