@@ -116,7 +116,7 @@ function RepositoryDetails() {
         </div>
       </div>
 
-      <FileUpload onUpload={handleFileUpload} />
+      <FileUpload onUpload={handleFileUpload} repositoryId={id} />
 
       <div className="repo-tabs">
         <Link className="repo-tab active" to={`/repositories/${id}`}>
