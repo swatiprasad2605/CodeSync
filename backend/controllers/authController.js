@@ -23,8 +23,7 @@ const register = async (req, res) => {
       `SELECT NVL(MAX(UserID), 0) + 1 AS NEXT_ID FROM USERS`
     );
 
-    const userId = result.rows[0].NEXT_ID;
-
+const userId = result.rows[0][0];
     await connection.execute(
       `INSERT INTO USERS
        (UserID, Name, Email, Password, Department)

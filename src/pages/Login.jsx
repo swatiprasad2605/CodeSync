@@ -1,5 +1,7 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { loginUser } from "../services/authService";
 
 function Login() {
   const navigate = useNavigate();
@@ -7,8 +9,9 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
 
@@ -17,18 +20,28 @@ function Login() {
       return;
     }
 
-    // Temporary frontend-only login
-    const demoUser = {
-      id: 1,
-      name: "Demo User",
-      email: email,
-      department: "CSE",
-    };
+    try {
+      setLoading(true);
 
-    localStorage.setItem("user", JSON.stringify(demoUser));
-    localStorage.setItem("token", "demo-token");
+      const data = await loginUser({ email, password });
 
-    navigate("/dashboard");
+      if (!data.token || !data.user) {
+        setError("Login response is missing user information.");
+        return;
+      }
+
+      localStorage.setItem("user", JSON.stringify(data.user));
+      localStorage.setItem("token", data.token);
+
+      navigate("/dashboard");
+    } catch (error) {
+      setError(
+        error.response?.data?.message ||
+          "Login failed. Please check your credentials and try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -43,7 +56,6 @@ function Login() {
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="email">Email</label>
-
             <input
               id="email"
               type="email"
@@ -56,7 +68,6 @@ function Login() {
 
           <div className="form-group">
             <label htmlFor="password">Password</label>
-
             <input
               id="password"
               type="password"
@@ -67,8 +78,12 @@ function Login() {
             />
           </div>
 
-          <button type="submit" className="primary-button full-width">
-            Login
+          <button
+            type="submit"
+            className="primary-button full-width"
+            disabled={loading}
+          >
+            {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 
