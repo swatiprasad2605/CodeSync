@@ -16,14 +16,23 @@ const register = async (req, res) => {
     }
 
     connection = await getConnection();
+    const existingUser = await connection.execute(
+  `SELECT USERID FROM USERS WHERE LOWER(EMAIL) = LOWER(:email)`,
+  { email: email.trim() }
+);
 
+if (existingUser.rows.length > 0) {
+  return res.status(409).json({
+    message: "This email is already registered. Please log in instead."
+  });
+}
     const hashedPassword = await bcrypt.hash(password, 10);
-
     const result = await connection.execute(
-      `SELECT NVL(MAX(UserID), 0) + 1 AS NEXT_ID FROM USERS`
-    );
+  `SELECT USERS_SEQ.NEXTVAL FROM DUAL`
+);
 
 const userId = result.rows[0][0];
+    
     await connection.execute(
       `INSERT INTO USERS
        (UserID, Name, Email, Password, Department)
@@ -32,7 +41,7 @@ const userId = result.rows[0][0];
       {
         userId,
         name,
-        email,
+        email: email.trim(),
         password: hashedPassword,
         department: department || null
       },
